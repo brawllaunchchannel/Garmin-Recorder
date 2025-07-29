@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garmin Video Recorder</title>
+    <title>Garmin Video Recorder Pro</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -71,9 +71,24 @@
             animation: pulse 1s infinite;
         }
 
+        .speech-feedback {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #4CAF50;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: none;
+            max-width: 90%;
+            text-align: center;
+        }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
         }
 
         .status-panel {
@@ -94,6 +109,12 @@
         .status-listening { color: #4CAF50; }
         .status-recording { color: #f44336; }
         .status-inactive { color: #999; }
+
+        .recognition-quality {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 10px;
+        }
 
         .controls {
             display: flex;
@@ -144,6 +165,16 @@
             transform: translateY(-2px);
         }
 
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #F57C00;
+            transform: translateY(-2px);
+        }
+
         .commands-info {
             background: rgba(0,0,0,0.3);
             padding: 20px;
@@ -157,7 +188,7 @@
             font-size: 1.3rem;
         }
 
-        .command-list {
+        .command-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
@@ -174,7 +205,12 @@
         .command-item strong {
             color: #4CAF50;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+        }
+
+        .command-variants {
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
 
         .listening-animation {
@@ -213,11 +249,21 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-direction: column;
+        }
+
+        .audio-test {
+            background: rgba(255, 165, 0, 0.2);
+            border: 2px solid #FF9800;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
             .header h1 { font-size: 2rem; }
-            .command-list { grid-template-columns: 1fr; }
+            .command-grid { grid-template-columns: 1fr; }
             .controls { flex-direction: column; align-items: center; }
             .btn { width: 100%; max-width: 300px; }
         }
@@ -225,14 +271,15 @@
 </head>
 <body>
     <div class="header">
-        <h1>🎥 Garmin Video Recorder</h1>
-        <p>Sprachgesteuerte Videoaufnahme</p>
+        <h1>🎥 Garmin Video Recorder Pro</h1>
+        <p>Intelligente Sprachsteuerung</p>
     </div>
 
     <div class="video-container">
         <video id="videoPreview" autoplay muted playsinline style="display: none;"></video>
         <div class="no-video" id="noVideoText">📹 Kamera wird geladen...</div>
         <div class="recording-indicator" id="recordingIndicator">🔴 AUFNAHME LÄUFT</div>
+        <div class="speech-feedback" id="speechFeedback">Erkannt: "..."</div>
     </div>
 
     <div class="status-panel">
@@ -241,12 +288,19 @@
             <span class="listening-animation"></span>
             Höre auf Sprachbefehle...
         </div>
+        <div class="recognition-quality" id="recognitionQuality"></div>
     </div>
 
     <div class="controls">
         <button class="btn btn-primary" id="startListeningBtn">🎤 Spracherkennung starten</button>
         <button class="btn btn-danger" id="manualRecordBtn">🎬 Manuell aufnehmen</button>
         <button class="btn btn-secondary" id="stopRecordBtn" style="display: none;">⏹️ Aufnahme stoppen</button>
+        <button class="btn btn-warning" id="testAudioBtn">🔊 Audio testen</button>
+    </div>
+
+    <div class="audio-test" id="audioTest" style="display: none;">
+        <h4>🎧 Audio-Status</h4>
+        <div id="audioStatus">Teste Audio-Aufnahme...</div>
     </div>
 
     <div class="download-section" id="downloadSection" style="display: none;">
@@ -255,23 +309,34 @@
     </div>
 
     <div class="commands-info">
-        <h3>🗣️ Sprachbefehle</h3>
-        <div class="command-list">
+        <h3>🗣️ Erweiterte Sprachbefehle</h3>
+        <div class="command-grid">
             <div class="command-item">
-                <strong>Start:</strong>
-                "OK Garmin Aufnahme starten"<br>
-                "Okay Garmin Video starten"
+                <strong>Video starten:</strong>
+                <div class="command-variants">
+                    • "OK Garmin Aufnahme starten"<br>
+                    • "Okay Garmin Video starten"<br>
+                    • "Garmin starte Aufnahme"<br>
+                    • "Start Video Garmin"
+                </div>
             </div>
             <div class="command-item">
-                <strong>Stop:</strong>
-                "OK Garmin Video speichern"<br>
-                "Okay Garmin Aufnahme speichern"
+                <strong>Video stoppen:</strong>
+                <div class="command-variants">
+                    • "OK Garmin Video speichern"<br>
+                    • "Okay Garmin Aufnahme speichern"<br>
+                    • "Garmin stoppe Video"<br>
+                    • "Stop Aufnahme Garmin"
+                </div>
             </div>
         </div>
+        <p style="margin-top: 15px; font-size: 0.9rem; color: #ccc;">
+            💡 Tipp: Sprechen Sie klar und deutlich. Bei Problemen nutzen Sie die manuellen Buttons.
+        </p>
     </div>
 
     <script>
-        class VoiceVideoRecorder {
+        class VoiceVideoRecorderPro {
             constructor() {
                 this.mediaRecorder = null;
                 this.recordedChunks = [];
@@ -280,19 +345,34 @@
                 this.recognition = null;
                 this.stream = null;
                 this.recordedVideos = [];
+                this.recognitionAttempts = 0;
+                this.recognitionSuccess = 0;
 
+                // Erweiterte Sprachbefehle - mehr Variationen
                 this.startCommands = [
                     'ok garmin aufnahme starten',
                     'okay garmin aufnahme starten',
                     'ok garmin video starten',
-                    'okay garmin video starten'
+                    'okay garmin video starten',
+                    'garmin starte aufnahme',
+                    'garmin start video',
+                    'start video garmin',
+                    'aufnahme starten garmin',
+                    'video recording start',
+                    'start recording garmin'
                 ];
 
                 this.stopCommands = [
                     'ok garmin video speichern',
                     'okay garmin video speichern',
                     'ok garmin aufnahme speichern',
-                    'okay garmin aufnahme speichern'
+                    'okay garmin aufnahme speichern',
+                    'garmin stoppe video',
+                    'garmin stop aufnahme',
+                    'stop aufnahme garmin',
+                    'video speichern garmin',
+                    'stop recording garmin',
+                    'save video garmin'
                 ];
 
                 this.initElements();
@@ -305,11 +385,16 @@
                 this.videoPreview = document.getElementById('videoPreview');
                 this.noVideoText = document.getElementById('noVideoText');
                 this.recordingIndicator = document.getElementById('recordingIndicator');
+                this.speechFeedback = document.getElementById('speechFeedback');
                 this.statusText = document.getElementById('statusText');
                 this.listeningIndicator = document.getElementById('listeningIndicator');
+                this.recognitionQuality = document.getElementById('recognitionQuality');
                 this.startListeningBtn = document.getElementById('startListeningBtn');
                 this.manualRecordBtn = document.getElementById('manualRecordBtn');
                 this.stopRecordBtn = document.getElementById('stopRecordBtn');
+                this.testAudioBtn = document.getElementById('testAudioBtn');
+                this.audioTest = document.getElementById('audioTest');
+                this.audioStatus = document.getElementById('audioStatus');
                 this.downloadSection = document.getElementById('downloadSection');
                 this.videoList = document.getElementById('videoList');
             }
@@ -322,17 +407,30 @@
                             height: { ideal: 1080 },
                             facingMode: 'environment'
                         },
-                        audio: true
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            sampleRate: 44100
+                        }
                     });
                     
                     this.videoPreview.srcObject = this.stream;
                     this.videoPreview.style.display = 'block';
                     this.noVideoText.style.display = 'none';
                     this.updateStatus('🎤 Bereit - Spracherkennung aktivieren', 'inactive');
+                    
+                    // Audio-Tracks prüfen
+                    const audioTracks = this.stream.getAudioTracks();
+                    console.log('Audio Tracks gefunden:', audioTracks.length);
+                    if (audioTracks.length > 0) {
+                        console.log('Audio Settings:', audioTracks[0].getSettings());
+                    }
+                    
                 } catch (error) {
                     console.error('Kamera-Zugriff fehlgeschlagen:', error);
-                    this.noVideoText.textContent = '❌ Kamera-Zugriff verweigert - Berechtigung in Browser erteilen';
-                    this.updateStatus('Kamera-Berechtigung erforderlich', 'inactive');
+                    this.noVideoText.textContent = '❌ Kamera/Mikrofon-Zugriff verweigert - Berechtigung in Browser erteilen';
+                    this.updateStatus('Kamera & Mikrofon-Berechtigung erforderlich', 'inactive');
                 }
             }
 
@@ -344,227 +442,123 @@
                     this.recognition.continuous = true;
                     this.recognition.interimResults = true;
                     this.recognition.lang = 'de-DE';
+                    this.recognition.maxAlternatives = 3; // Mehr Alternativen für bessere Erkennung
 
                     this.recognition.onstart = () => {
                         console.log('Spracherkennung gestartet');
                         this.isListening = true;
                         this.updateUI();
+                        this.updateRecognitionQuality();
                     };
 
                     this.recognition.onresult = (event) => {
+                        let interimTranscript = '';
                         let finalTranscript = '';
                         
                         for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
                             if (event.results[i].isFinal) {
-                                finalTranscript += event.results[i][0].transcript;
+                                finalTranscript += transcript;
+                                this.recognitionAttempts++;
+                            } else {
+                                interimTranscript += transcript;
                             }
                         }
 
+                        // Live-Feedback anzeigen
+                        if (interimTranscript || finalTranscript) {
+                            this.showSpeechFeedback(finalTranscript || interimTranscript);
+                        }
+
                         if (finalTranscript) {
-                            this.processSpeechResult(finalTranscript.toLowerCase().trim());
+                            const success = this.processSpeechResult(finalTranscript.toLowerCase().trim());
+                            if (success) {
+                                this.recognitionSuccess++;
+                            }
+                            this.updateRecognitionQuality();
                         }
                     };
 
                     this.recognition.onerror = (event) => {
                         console.error('Spracherkennungsfehler:', event.error);
+                        this.showSpeechFeedback(`Fehler: ${event.error}`, true);
+                        
                         setTimeout(() => {
                             if (this.isListening && !this.isRecording) {
                                 this.startListening();
                             }
-                        }, 1000);
+                        }, 2000);
                     };
 
                     this.recognition.onend = () => {
                         if (this.isListening) {
-                            setTimeout(() => this.startListening(), 100);
+                            setTimeout(() => this.startListening(), 500);
                         }
                     };
+                    
+                    this.updateRecognitionQuality();
                 } else {
                     console.error('Spracherkennung nicht unterstützt');
                     this.updateStatus('Spracherkennung nicht verfügbar - Chrome Browser verwenden', 'inactive');
+                    this.recognitionQuality.textContent = '❌ Browser unterstützt keine Spracherkennung';
                 }
             }
 
             processSpeechResult(transcript) {
                 console.log('Erkannt:', transcript);
 
+                // Tolerantere Erkennung mit Teilstring-Matching
                 for (let command of this.startCommands) {
-                    if (transcript.includes(command) && !this.isRecording) {
-                        this.startRecording();
-                        return;
+                    if (this.matchesCommand(transcript, command) && !this.isRecording) {
+                        this.showSpeechFeedback('✅ START-Befehl erkannt!');
+                        setTimeout(() => this.startRecording(), 500);
+                        return true;
                     }
                 }
 
                 for (let command of this.stopCommands) {
-                    if (transcript.includes(command) && this.isRecording) {
-                        this.stopRecording();
-                        return;
+                    if (this.matchesCommand(transcript, command) && this.isRecording) {
+                        this.showSpeechFeedback('✅ STOP-Befehl erkannt!');
+                        setTimeout(() => this.stopRecording(), 500);
+                        return true;
                     }
                 }
+
+                return false;
             }
 
-            startListening() {
-                if (this.recognition && !this.isListening) {
-                    try {
-                        this.recognition.start();
-                    } catch (error) {
-                        console.error('Fehler beim Starten der Spracherkennung:', error);
-                    }
-                }
-            }
+            matchesCommand(transcript, command) {
+                // Entferne Sonderzeichen und normalisiere
+                const normalizeText = (text) => text.toLowerCase()
+                    .replace(/[.,!?]/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
 
-            stopListening() {
-                if (this.recognition && this.isListening) {
-                    this.recognition.stop();
-                    this.isListening = false;
-                    this.updateUI();
-                }
-            }
+                const normalizedTranscript = normalizeText(transcript);
+                const normalizedCommand = normalizeText(command);
 
-            async startRecording() {
-                if (this.isRecording || !this.stream) return;
-
-                try {
-                    this.recordedChunks = [];
-                    this.mediaRecorder = new MediaRecorder(this.stream, {
-                        mimeType: 'video/webm;codecs=vp9'
-                    });
-
-                    this.mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            this.recordedChunks.push(event.data);
-                        }
-                    };
-
-                    this.mediaRecorder.onstop = () => {
-                        this.saveRecording();
-                    };
-
-                    this.mediaRecorder.start();
-                    this.isRecording = true;
-                    this.updateUI();
-                    
-                    if (navigator.vibrate) {
-                        navigator.vibrate(200);
-                    }
-
-                    console.log('Aufnahme gestartet');
-                } catch (error) {
-                    console.error('Fehler beim Starten der Aufnahme:', error);
-                    alert('Fehler beim Starten der Aufnahme');
-                }
-            }
-
-            stopRecording() {
-                if (!this.isRecording || !this.mediaRecorder) return;
-
-                this.mediaRecorder.stop();
-                this.isRecording = false;
-                this.updateUI();
-
-                if (navigator.vibrate) {
-                    navigator.vibrate([100, 50, 100]);
+                // Direkte Übereinstimmung
+                if (normalizedTranscript.includes(normalizedCommand)) {
+                    return true;
                 }
 
-                console.log('Aufnahme gestoppt');
-            }
-
-            saveRecording() {
-                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const timestamp = new Date().toLocaleString('de-DE');
+                // Wort-für-Wort Matching (mindestens 70% der Wörter müssen passen)
+                const transcriptWords = normalizedTranscript.split(' ');
+                const commandWords = normalizedCommand.split(' ');
                 
-                this.recordedVideos.push({
-                    url: url,
-                    timestamp: timestamp,
-                    blob: blob
-                });
-
-                this.updateVideoList();
-                this.downloadSection.style.display = 'block';
-            }
-
-            updateVideoList() {
-                this.videoList.innerHTML = '';
-                
-                this.recordedVideos.forEach((video, index) => {
-                    const videoItem = document.createElement('div');
-                    videoItem.className = 'video-item';
-                    videoItem.innerHTML = `
-                        <span>📹 Video ${index + 1} (${video.timestamp})</span>
-                        <button class="btn btn-primary" onclick="recorder.downloadVideo(${index})">💾 Download</button>
-                    `;
-                    this.videoList.appendChild(videoItem);
-                });
-            }
-
-            downloadVideo(index) {
-                const video = this.recordedVideos[index];
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = video.url;
-                a.download = `garmin_video_${Date.now()}.webm`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
-
-            updateStatus(text, type) {
-                this.statusText.textContent = text;
-                this.statusText.className = `status-text status-${type}`;
-            }
-
-            updateUI() {
-                if (this.isRecording) {
-                    this.updateStatus('🔴 AUFNAHME LÄUFT - Sage: "OK Garmin Video speichern"', 'recording');
-                    this.recordingIndicator.style.display = 'block';
-                    this.listeningIndicator.style.display = 'block';
-                    this.startListeningBtn.style.display = 'none';
-                    this.manualRecordBtn.style.display = 'none';
-                    this.stopRecordBtn.style.display = 'inline-block';
-                } else if (this.isListening) {
-                    this.updateStatus('🎤 BEREIT - Sage: "OK Garmin Aufnahme starten"', 'listening');
-                    this.recordingIndicator.style.display = 'none';
-                    this.listeningIndicator.style.display = 'block';
-                    this.startListeningBtn.textContent = '🔇 Spracherkennung stoppen';
-                    this.manualRecordBtn.style.display = 'inline-block';
-                    this.stopRecordBtn.style.display = 'none';
-                } else {
-                    this.updateStatus('⏸️ PAUSIERT - Spracherkennung aktivieren', 'inactive');
-                    this.recordingIndicator.style.display = 'none';
-                    this.listeningIndicator.style.display = 'none';
-                    this.startListeningBtn.textContent = '🎤 Spracherkennung starten';
-                    this.manualRecordBtn.style.display = 'inline-block';
-                    this.stopRecordBtn.style.display = 'none';
+                let matches = 0;
+                for (let word of commandWords) {
+                    if (transcriptWords.some(tw => tw.includes(word) || word.includes(tw))) {
+                        matches++;
+                    }
                 }
+
+                const matchPercentage = matches / commandWords.length;
+                console.log(`Match für "${command}": ${(matchPercentage * 100).toFixed(1)}%`);
+                
+                return matchPercentage >= 0.7; // 70% der Wörter müssen passen
             }
 
-            bindEvents() {
-                this.startListeningBtn.addEventListener('click', () => {
-                    if (this.isListening) {
-                        this.stopListening();
-                    } else {
-                        this.startListening();
-                    }
-                });
-
-                this.manualRecordBtn.addEventListener('click', () => {
-                    if (!this.isRecording) {
-                        this.startRecording();
-                    }
-                });
-
-                this.stopRecordBtn.addEventListener('click', () => {
-                    this.stopRecording();
-                });
-            }
-        }
-
-        let recorder;
-        
-        window.addEventListener('load', () => {
-            recorder = new VoiceVideoRecorder();
-        });
-    </script>
-</body>
-</html>
+            showSpeechFeedback(text, isError = false) {
+                this.speechFeedback.textContent = text;
+   
