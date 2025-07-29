@@ -400,7 +400,14 @@
             }
 
             async initCamera() {
+                console.log('Initialisiere Kamera...');
                 try {
+                    // Prüfe ob getUserMedia verfügbar ist
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('getUserMedia nicht unterstützt');
+                    }
+                    
+                    console.log('Fordere Kamera/Mikrofon-Zugriff an...');
                     this.stream = await navigator.mediaDevices.getUserMedia({
                         video: { 
                             width: { ideal: 1920 }, 
@@ -415,6 +422,7 @@
                         }
                     });
                     
+                    console.log('Stream erhalten:', this.stream);
                     this.videoPreview.srcObject = this.stream;
                     this.videoPreview.style.display = 'block';
                     this.noVideoText.style.display = 'none';
@@ -422,15 +430,24 @@
                     
                     // Audio-Tracks prüfen
                     const audioTracks = this.stream.getAudioTracks();
-                    console.log('Audio Tracks gefunden:', audioTracks.length);
-                    if (audioTracks.length > 0) {
-                        console.log('Audio Settings:', audioTracks[0].getSettings());
-                    }
+                    const videoTracks = this.stream.getVideoTracks();
+                    console.log('Audio Tracks:', audioTracks.length, 'Video Tracks:', videoTracks.length);
                     
                 } catch (error) {
-                    console.error('Kamera-Zugriff fehlgeschlagen:', error);
-                    this.noVideoText.textContent = '❌ Kamera/Mikrofon-Zugriff verweigert - Berechtigung in Browser erteilen';
-                    this.updateStatus('Kamera & Mikrofon-Berechtigung erforderlich', 'inactive');
+                    console.error('Kamera-Fehler:', error);
+                    this.noVideoText.textContent = `❌ Fehler: ${error.message}`;
+                    if (error.name === 'NotAllowedError') {
+                        this.updateStatus('Kamera/Mikrofon-Berechtigung verweigert', 'inactive');
+                        this.noVideoText.textContent = '❌ Berechtigung verweigert - Seite neu laden und "Zulassen" drücken';
+                    } else if (error.name === 'NotFoundError') {
+                        this.updateStatus('Keine Kamera gefunden', 'inactive');
+                        this.noVideoText.textContent = '❌ Keine Kamera gefunden';
+                    } else if (error.name === 'NotReadableError') {
+                        this.updateStatus('Kamera wird von anderer App verwendet', 'inactive');
+                        this.noVideoText.textContent = '❌ Kamera blockiert - andere Apps schließen';
+                    } else {
+                        this.updateStatus('Kamera-Fehler: ' + error.message, 'inactive');
+                    }
                 }
             }
 
@@ -534,31 +551,4 @@
                     .replace(/\s+/g, ' ')
                     .trim();
 
-                const normalizedTranscript = normalizeText(transcript);
-                const normalizedCommand = normalizeText(command);
-
-                // Direkte Übereinstimmung
-                if (normalizedTranscript.includes(normalizedCommand)) {
-                    return true;
-                }
-
-                // Wort-für-Wort Matching (mindestens 70% der Wörter müssen passen)
-                const transcriptWords = normalizedTranscript.split(' ');
-                const commandWords = normalizedCommand.split(' ');
-                
-                let matches = 0;
-                for (let word of commandWords) {
-                    if (transcriptWords.some(tw => tw.includes(word) || word.includes(tw))) {
-                        matches++;
-                    }
-                }
-
-                const matchPercentage = matches / commandWords.length;
-                console.log(`Match für "${command}": ${(matchPercentage * 100).toFixed(1)}%`);
-                
-                return matchPercentage >= 0.7; // 70% der Wörter müssen passen
-            }
-
-            showSpeechFeedback(text, isError = false) {
-                this.speechFeedback.textContent = text;
-   
+                const normaliz
