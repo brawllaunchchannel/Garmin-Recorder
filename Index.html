@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garmin Video Recorder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .video-container {
+            position: relative;
+            flex: 1;
+            background: black;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoPreview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-video {
+            color: #666;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .recording-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: none;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-panel {
+            background: rgba(0,0,0,0.4);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .status-listening { color: #4CAF50; }
+        .status-recording { color: #f44336; }
+        .status-inactive { color: #999; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+
+        .commands-info {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .commands-info h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .command-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .command-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .command-item strong {
+            color: #4CAF50;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .listening-animation {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #4CAF50;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .download-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .video-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .video-item {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .command-list { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎥 Garmin Video Recorder</h1>
+        <p>Sprachgesteuerte Videoaufnahme</p>
+    </div>
+
+    <div class="video-container">
+        <video id="videoPreview" autoplay muted playsinline style="display: none;"></video>
+        <div class="no-video" id="noVideoText">📹 Kamera wird geladen...</div>
+        <div class="recording-indicator" id="recordingIndicator">🔴 AUFNAHME LÄUFT</div>
+    </div>
+
+    <div class="status-panel">
+        <div class="status-text" id="statusText">Initialisierung...</div>
+        <div id="listeningIndicator" style="display: none;">
+            <span class="listening-animation"></span>
+            Höre auf Sprachbefehle...
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="startListeningBtn">🎤 Spracherkennung starten</button>
+        <button class="btn btn-danger" id="manualRecordBtn">🎬 Manuell aufnehmen</button>
+        <button class="btn btn-secondary" id="stopRecordBtn" style="display: none;">⏹️ Aufnahme stoppen</button>
+    </div>
+
+    <div class="download-section" id="downloadSection" style="display: none;">
+        <h3>📥 Aufgenommene Videos</h3>
+        <div class="video-list" id="videoList"></div>
+    </div>
+
+    <div class="commands-info">
+        <h3>🗣️ Sprachbefehle</h3>
+        <div class="command-list">
+            <div class="command-item">
+                <strong>Start:</strong>
+                "OK Garmin Aufnahme starten"<br>
+                "Okay Garmin Video starten"
+            </div>
+            <div class="command-item">
+                <strong>Stop:</strong>
+                "OK Garmin Video speichern"<br>
+                "Okay Garmin Aufnahme speichern"
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class VoiceVideoRecorder {
+            constructor() {
+                this.mediaRecorder = null;
+                this.recordedChunks = [];
+                this.isRecording = false;
+                this.isListening = false;
+                this.recognition = null;
+                this.stream = null;
+                this.recordedVideos = [];
+
+                this.startCommands = [
+                    'ok garmin aufnahme starten',
+                    'okay garmin aufnahme starten',
+                    'ok garmin video starten',
+                    'okay garmin video starten'
+                ];
+
+                this.stopCommands = [
+                    'ok garmin video speichern',
+                    'okay garmin video speichern',
+                    'ok garmin aufnahme speichern',
+                    'okay garmin aufnahme speichern'
+                ];
+
+                this.initElements();
+                this.initCamera();
+                this.initSpeechRecognition();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.videoPreview = document.getElementById('videoPreview');
+                this.noVideoText = document.getElementById('noVideoText');
+                this.recordingIndicator = document.getElementById('recordingIndicator');
+                this.statusText = document.getElementById('statusText');
+                this.listeningIndicator = document.getElementById('listeningIndicator');
+                this.startListeningBtn = document.getElementById('startListeningBtn');
+                this.manualRecordBtn = document.getElementById('manualRecordBtn');
+                this.stopRecordBtn = document.getElementById('stopRecordBtn');
+                this.downloadSection = document.getElementById('downloadSection');
+                this.videoList = document.getElementById('videoList');
+            }
+
+            async initCamera() {
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            width: { ideal: 1920 }, 
+                            height: { ideal: 1080 },
+                            facingMode: 'environment'
+                        },
+                        audio: true
+                    });
+                    
+                    this.videoPreview.srcObject = this.stream;
+                    this.videoPreview.style.display = 'block';
+                    this.noVideoText.style.display = 'none';
+                    this.updateStatus('🎤 Bereit - Spracherkennung aktivieren', 'inactive');
+                } catch (error) {
+                    console.error('Kamera-Zugriff fehlgeschlagen:', error);
+                    this.noVideoText.textContent = '❌ Kamera-Zugriff verweigert - Berechtigung in Browser erteilen';
+                    this.updateStatus('Kamera-Berechtigung erforderlich', 'inactive');
+                }
+            }
+
+            initSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+                    this.recognition.lang = 'de-DE';
+
+                    this.recognition.onstart = () => {
+                        console.log('Spracherkennung gestartet');
+                        this.isListening = true;
+                        this.updateUI();
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            }
+                        }
+
+                        if (finalTranscript) {
+                            this.processSpeechResult(finalTranscript.toLowerCase().trim());
+                        }
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        console.error('Spracherkennungsfehler:', event.error);
+                        setTimeout(() => {
+                            if (this.isListening && !this.isRecording) {
+                                this.startListening();
+                            }
+                        }, 1000);
+                    };
+
+                    this.recognition.onend = () => {
+                        if (this.isListening) {
+                            setTimeout(() => this.startListening(), 100);
+                        }
+                    };
+                } else {
+                    console.error('Spracherkennung nicht unterstützt');
+                    this.updateStatus('Spracherkennung nicht verfügbar - Chrome Browser verwenden', 'inactive');
+                }
+            }
+
+            processSpeechResult(transcript) {
+                console.log('Erkannt:', transcript);
+
+                for (let command of this.startCommands) {
+                    if (transcript.includes(command) && !this.isRecording) {
+                        this.startRecording();
+                        return;
+                    }
+                }
+
+                for (let command of this.stopCommands) {
+                    if (transcript.includes(command) && this.isRecording) {
+                        this.stopRecording();
+                        return;
+                    }
+                }
+            }
+
+            startListening() {
+                if (this.recognition && !this.isListening) {
+                    try {
+                        this.recognition.start();
+                    } catch (error) {
+                        console.error('Fehler beim Starten der Spracherkennung:', error);
+                    }
+                }
+            }
+
+            stopListening() {
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                    this.isListening = false;
+                    this.updateUI();
+                }
+            }
+
+            async startRecording() {
+                if (this.isRecording || !this.stream) return;
+
+                try {
+                    this.recordedChunks = [];
+                    this.mediaRecorder = new MediaRecorder(this.stream, {
+                        mimeType: 'video/webm;codecs=vp9'
+                    });
+
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.recordedChunks.push(event.data);
+                        }
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        this.saveRecording();
+                    };
+
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    this.updateUI();
+                    
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200);
+                    }
+
+                    console.log('Aufnahme gestartet');
+                } catch (error) {
+                    console.error('Fehler beim Starten der Aufnahme:', error);
+                    alert('Fehler beim Starten der Aufnahme');
+                }
+            }
+
+            stopRecording() {
+                if (!this.isRecording || !this.mediaRecorder) return;
+
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+                this.updateUI();
+
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100]);
+                }
+
+                console.log('Aufnahme gestoppt');
+            }
+
+            saveRecording() {
+                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const timestamp = new Date().toLocaleString('de-DE');
+                
+                this.recordedVideos.push({
+                    url: url,
+                    timestamp: timestamp,
+                    blob: blob
+                });
+
+                this.updateVideoList();
+                this.downloadSection.style.display = 'block';
+            }
+
+            updateVideoList() {
+                this.videoList.innerHTML = '';
+                
+                this.recordedVideos.forEach((video, index) => {
+                    const videoItem = document.createElement('div');
+                    videoItem.className = 'video-item';
+                    videoItem.innerHTML = `
+                        <span>📹 Video ${index + 1} (${video.timestamp})</span>
+                        <button class="btn btn-primary" onclick="recorder.downloadVideo(${index})">💾 Download</button>
+                    `;
+                    this.videoList.appendChild(videoItem);
+                });
+            }
+
+            downloadVideo(index) {
+                const video = this.recordedVideos[index];
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = video.url;
+                a.download = `garmin_video_${Date.now()}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+            updateStatus(text, type) {
+                this.statusText.textContent = text;
+                this.statusText.className = `status-text status-${type}`;
+            }
+
+            updateUI() {
+                if (this.isRecording) {
+                    this.updateStatus('🔴 AUFNAHME LÄUFT - Sage: "OK Garmin Video speichern"', 'recording');
+                    this.recordingIndicator.style.display = 'block';
+                    this.listeningIndicator.style.display = 'block';
+                    this.startListeningBtn.style.display = 'none';
+                    this.manualRecordBtn.style.display = 'none';
+                    this.stopRecordBtn.style.display = 'inline-block';
+                } else if (this.isListening) {
+                    this.updateStatus('🎤 BEREIT - Sage: "OK Garmin Aufnahme starten"', 'listening');
+                    this.recordingIndicator.style.display = 'none';
+                    this.listeningIndicator.style.display = 'block';
+                    this.startListeningBtn.textContent = '🔇 Spracherkennung stoppen';
+                    this.manualRecordBtn.style.display = 'inline-block';
+                    this.stopRecordBtn.style.display = 'none';
+                } else {
+                    this.updateStatus('⏸️ PAUSIERT - Spracherkennung aktivieren', 'inactive');
+                    this.recordingIndicator.style.display = 'none';
+                    this.listeningIndicator.style.display = 'none';
+                    this.startListeningBtn.textContent = '🎤 Spracherkennung starten';
+                    this.manualRecordBtn.style.display = 'inline-block';
+                    this.stopRecordBtn.style.display = 'none';
+                }
+            }
+
+            bindEvents() {
+                this.startListeningBtn.addEventListener('click', () => {
+                    if (this.isListening) {
+                        this.stopListening();
+                    } else {
+                        this.startListening();
+                    }
+                });
+
+                this.manualRecordBtn.addEventListener('click', () => {
+                    if (!this.isRecording) {
+                        this.startRecording();
+                    }
+                });
+
+                this.stopRecordBtn.addEventListener('click', () => {
+                    this.stopRecording();
+                });
+            }
+        }
+
+        let recorder;
+        
+        window.addEventListener('load', () => {
+            recorder = new VoiceVideoRecorder();
+        });
+    </script>
+</body>
+</html>
