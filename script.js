@@ -120,6 +120,28 @@ async function initCamera() {
         // Status aktualisieren
         updateStatus('✅ Bereit zum Aufnehmen!', 'ready');
         startRecordBtn.disabled = false;
+        
+        // Debug-Info ausgeben
+        console.log('=== KAMERA DEBUG ===');
+        console.log('Stream aktiv:', !!stream);
+        console.log('Video Element:', videoPreview);
+        console.log('Video srcObject gesetzt:', !!videoPreview.srcObject);
+        console.log('Video readyState:', videoPreview.readyState);
+        
+        // Video-Element Eigenschaften prüfen
+        videoPreview.onloadedmetadata = function() {
+            console.log('Video Metadaten geladen');
+            console.log('Video Dimensionen:', videoPreview.videoWidth, 'x', videoPreview.videoHeight);
+        };
+        
+        // Erzwinge Video-Anzeige nach 2 Sekunden
+        setTimeout(() => {
+            if (stream && videoPreview.srcObject) {
+                videoPreview.style.display = 'block';
+                noVideoText.style.display = 'none';
+                console.log('Video-Anzeige erzwungen');
+            }
+        }, 2000);
 
     } catch (error) {
         console.error('Kamera-Fehler:', error);
@@ -127,35 +149,77 @@ async function initCamera() {
     }
 }
 
-// Kamera-Fehler behandeln
+// Kamera-Fehler behandeln - mit mehr Details
 function handleCameraError(error) {
     let errorMessage = '';
     let errorType = 'inactive';
+    let solution = '';
+
+    console.error('=== KAMERA-FEHLER ===');
+    console.error('Error Name:', error.name);
+    console.error('Error Message:', error.message);
+    console.error('Error Stack:', error.stack);
 
     switch (error.name) {
         case 'NotAllowedError':
             errorMessage = '❌ Kamera/Mikrofon-Berechtigung verweigert';
-            noVideoText.textContent = 'Seite neu laden und "Zulassen" drücken';
+            solution = 'Seite neu laden und "Zulassen" drücken';
             break;
         case 'NotFoundError':
             errorMessage = '❌ Keine Kamera oder Mikrofon gefunden';
-            noVideoText.textContent = 'Gerät hat keine Kamera';
+            solution = 'Gerät hat keine Kamera oder Treiber-Problem';
             break;
         case 'NotReadableError':
             errorMessage = '❌ Kamera wird bereits verwendet';
-            noVideoText.textContent = 'Andere Apps schließen und neu versuchen';
+            solution = 'Andere Apps (WhatsApp, Instagram, etc.) schließen';
             break;
         case 'OverconstrainedError':
             errorMessage = '❌ Kamera-Einstellungen nicht unterstützt';
-            noVideoText.textContent = 'Browser/Gerät nicht kompatibel';
+            solution = 'Browser/Gerät nicht kompatibel - andere Einstellungen probieren';
+            break;
+        case 'AbortError':
+            errorMessage = '❌ Kamera-Zugriff abgebrochen';
+            solution = 'Nochmal versuchen';
             break;
         default:
-            errorMessage = `❌ Kamera-Fehler: ${error.message}`;
-            noVideoText.textContent = 'Unbekannter Fehler';
+            errorMessage = `❌ Unbekannter Kamera-Fehler: ${error.message}`;
+            solution = 'Browser neu starten oder anderen Browser probieren';
     }
+
+    noVideoText.innerHTML = `
+        <div style="text-align: center;">
+            <strong>${errorMessage}</strong><br><br>
+            <div style="color: #FFC107; font-size: 0.9rem;">
+                💡 ${solution}
+            </div><br>
+            <button onclick="retryCamera()" style="
+                background: #4CAF50; 
+                color: white; 
+                border: none; 
+                padding: 10px 20px; 
+                border-radius: 5px; 
+                cursor: pointer;
+                font-size: 1rem;
+            ">
+                🔄 Erneut versuchen
+            </button>
+        </div>
+    `;
 
     updateStatus(errorMessage, errorType);
     startRecordBtn.disabled = true;
+}
+
+// Kamera erneut versuchen
+function retryCamera() {
+    console.log('Versuche Kamera erneut...');
+    noVideoText.innerHTML = '🔄 Versuche erneut...';
+    updateStatus('Kamera wird neu initialisiert...', 'inactive');
+    
+    // Kurz warten, dann neu versuchen
+    setTimeout(() => {
+        initCamera();
+    }, 1000);
 }
 
 // Aufnahme starten
@@ -432,17 +496,33 @@ function playVideo(index) {
     `);
 }
 
-// Audio testen
+// Audio testen - mit mehr Debug-Info
 function testAudio() {
-    console.log('Audio-Test gestartet');
+    console.log('=== AUDIO/VIDEO TEST ===');
 
+    // Basis-Checks
+    console.log('getUserMedia verfügbar:', !!navigator.mediaDevices?.getUserMedia);
+    console.log('MediaRecorder verfügbar:', !!window.MediaRecorder);
+    console.log('Stream vorhanden:', !!stream);
+    
     if (!stream) {
-        audioStatus.innerHTML = '❌ Kein Stream verfügbar - Kamera nicht initialisiert';
+        audioStatus.innerHTML = `
+            <strong>❌ PROBLEM GEFUNDEN:</strong><br>
+            Kein Stream verfügbar!<br><br>
+            <strong>Mögliche Ursachen:</strong><br>
+            • Berechtigung nicht erteilt<br>
+            • Kamera wird von anderer App verwendet<br>
+            • Browser-Kompatibilität<br><br>
+            <strong>Lösungen:</strong><br>
+            1. Seite neu laden<br>
+            2. Andere Apps schließen<br>
+            3. Chrome verwenden
+        `;
         audioTest.style.display = 'block';
         
-        // Versuche Kamera erneut zu initialisieren
+        // Versuche Kamera neu zu initialisieren
+        console.log('Versuche Kamera neu zu initialisieren...');
         setTimeout(() => {
-            audioTest.style.display = 'none';
             initCamera();
         }, 3000);
         return;
@@ -451,23 +531,54 @@ function testAudio() {
     const audioTracks = stream.getAudioTracks();
     const videoTracks = stream.getVideoTracks();
 
+    console.log('Audio Tracks:', audioTracks);
+    console.log('Video Tracks:', videoTracks);
+
+    // Detaillierte Track-Informationen
+    if (videoTracks.length > 0) {
+        console.log('Video Track Settings:', videoTracks[0].getSettings());
+        console.log('Video Track Constraints:', videoTracks[0].getConstraints());
+    }
+
+    if (audioTracks.length > 0) {
+        console.log('Audio Track Settings:', audioTracks[0].getSettings());
+        console.log('Audio Track Constraints:', audioTracks[0].getConstraints());
+    }
+
     audioStatus.innerHTML = `
-        <strong>🔍 Stream-Analyse:</strong><br>
-        📹 Video Tracks: ${videoTracks.length}<br>
-        🎤 Audio Tracks: ${audioTracks.length}<br>
-        ${audioTracks.length > 0 ? '✅ Mikrofon aktiv' : '❌ Kein Mikrofon'}<br><br>
+        <strong>🔍 Detaillierte Stream-Analyse:</strong><br>
+        📹 Video Tracks: ${videoTracks.length} ${videoTracks.length > 0 ? '✅' : '❌'}<br>
+        🎤 Audio Tracks: ${audioTracks.length} ${audioTracks.length > 0 ? '✅' : '❌'}<br><br>
+        
         <strong>🌐 Browser-Info:</strong><br>
         Browser: ${getBrowserName()}<br>
         HTTPS: ${location.protocol === 'https:' ? 'Ja ✅' : 'Nein ❌'}<br>
-        getUserMedia: ${navigator.mediaDevices?.getUserMedia ? 'Verfügbar ✅' : 'Nicht verfügbar ❌'}
+        getUserMedia: ${navigator.mediaDevices?.getUserMedia ? 'Verfügbar ✅' : 'Nicht verfügbar ❌'}<br><br>
+        
+        <strong>📱 Video-Element:</strong><br>
+        srcObject gesetzt: ${!!videoPreview.srcObject ? 'Ja ✅' : 'Nein ❌'}<br>
+        readyState: ${videoPreview.readyState}<br>
+        Sichtbar: ${videoPreview.style.display !== 'none' ? 'Ja ✅' : 'Nein ❌'}<br><br>
+        
+        ${videoTracks.length === 0 || audioTracks.length === 0 ? 
+          '<strong style="color: #f44336;">⚠️ PROBLEM: Fehlende Tracks!</strong>' : 
+          '<strong style="color: #4CAF50;">✅ Stream OK - Aufnahme sollte funktionieren</strong>'
+        }
     `;
 
     audioTest.style.display = 'block';
 
-    // Automatisch nach 8 Sekunden ausblenden
+    // Test: Video-Element direkt aktivieren
+    if (stream && !videoPreview.srcObject) {
+        console.log('Setze srcObject erneut...');
+        videoPreview.srcObject = stream;
+        videoPreview.play().catch(e => console.error('Video play error:', e));
+    }
+
+    // Automatisch nach 10 Sekunden ausblenden
     setTimeout(() => {
         audioTest.style.display = 'none';
-    }, 8000);
+    }, 10000);
 }
 
 // Status aktualisieren
@@ -489,16 +600,4 @@ function formatFileSize(bytes) {
 function getBrowserName() {
     const userAgent = navigator.userAgent;
     if (userAgent.includes('Chrome')) return 'Chrome ✅';
-    if (userAgent.includes('Firefox')) return 'Firefox ⚠️';
-    if (userAgent.includes('Safari')) return 'Safari ⚠️';
-    if (userAgent.includes('Edge')) return 'Edge ⚠️';
-    return 'Unbekannt ❌';
-}
-
-// Debug-Informationen beim Start
-console.log('=== Garmin Video Recorder Debug Info ===');
-console.log('Browser:', getBrowserName());
-console.log('HTTPS:', location.protocol === 'https:');
-console.log('getUserMedia verfügbar:', !!navigator.mediaDevices?.getUserMedia);
-console.log('MediaRecorder verfügbar:', !!window.MediaRecorder);
-console.log('==========================================');
+ 
