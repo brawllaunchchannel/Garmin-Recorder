@@ -2,13 +2,48 @@
 let mediaRecorder = null;
 let recordedChunks = [];
 let isRecording = false;
+let isListening = false;
 let stream = null;
 let recordedVideos = [];
+let recognition = null;
 
 // DOM Elemente
-let videoPreview, noVideoText, recordingIndicator, statusText;
-let startRecordBtn, stopRecordBtn, testAudioBtn;
+let videoPreview, noVideoText, recordingIndicator, statusText, speechPreview, listeningStatus;
+let startListeningBtn, startRecordBtn, stopRecordBtn, testAudioBtn;
 let audioTest, audioStatus, downloadSection, videoList;
+
+// Sprachbefehle - erweitert mit Synonymen
+const startCommands = [
+    // OK/Okay Garmin + verschiedene Start-Begriffe
+    'ok garmin video starten',
+    'okay garmin video starten', 
+    'ok garmin aufnahme starten',
+    'okay garmin aufnahme starten',
+    'ok garmin recording starten',
+    'okay garmin recording starten',
+    'ok garmin beginnen',
+    'okay garmin beginnen',
+    'ok garmin start',
+    'okay garmin start'
+];
+
+const stopCommands = [
+    // OK/Okay Garmin + verschiedene Stop-Begriffe
+    'ok garmin video speichern',
+    'okay garmin video speichern',
+    'ok garmin aufnahme speichern', 
+    'okay garmin aufnahme speichern',
+    'ok garmin video sichern',
+    'okay garmin video sichern',
+    'ok garmin aufnahme sichern',
+    'okay garmin aufnahme sichern',
+    'ok garmin beenden',
+    'okay garmin beenden',
+    'ok garmin stoppen',
+    'okay garmin stoppen',
+    'ok garmin stop',
+    'okay garmin stop'
+];
 
 // Beim Laden der Seite initialisieren
 document.addEventListener('DOMContentLoaded', function() {
@@ -23,6 +58,9 @@ function initializeApp() {
     noVideoText = document.getElementById('noVideoText');
     recordingIndicator = document.getElementById('recordingIndicator');
     statusText = document.getElementById('statusText');
+    speechPreview = document.getElementById('speechPreview');
+    listeningStatus = document.getElementById('listeningStatus');
+    startListeningBtn = document.getElementById('startListeningBtn');
     startRecordBtn = document.getElementById('startRecordBtn');
     stopRecordBtn = document.getElementById('stopRecordBtn');
     testAudioBtn = document.getElementById('testAudioBtn');
@@ -32,12 +70,14 @@ function initializeApp() {
     videoList = document.getElementById('videoList');
 
     // Event Listeners hinzufügen
+    startListeningBtn.addEventListener('click', toggleListening);
     startRecordBtn.addEventListener('click', startRecording);
     stopRecordBtn.addEventListener('click', stopRecording);
     testAudioBtn.addEventListener('click', testAudio);
 
-    // Kamera initialisieren
+    // Kamera und Spracherkennung initialisieren
     initCamera();
+    initSpeechRecognition();
 }
 
 // Kamera initialisieren
