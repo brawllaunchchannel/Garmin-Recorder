@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garmin Video Recorder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Garmin Video Recorder</h1>
+        
+        <div class="video-container">
+            <video id="videoPreview" autoplay muted playsinline></video>
+            <div id="noVideoText" class="no-video">📹 Kamera wird geladen...</div>
+            <div id="recordingIndicator" class="recording-indicator">🔴 AUFNAHME LÄUFT</div>
+        </div>
+        
+        <div id="statusPanel" class="status-panel">
+            <div id="statusText" class="status-text">Initialisierung...</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startRecordBtn" class="btn btn-start">📹 Aufnahme starten</button>
+            <button id="stopRecordBtn" class="btn btn-stop" style="display: none;">⏹️ Aufnahme stoppen</button>
+            <button id="testAudioBtn" class="btn btn-test">🔊 Audio testen</button>
+        </div>
+        
+        <div id="audioTest" class="audio-test" style="display: none;">
+            <h4>🎧 Audio-Status</h4>
+            <div id="audioStatus">Teste Audio...</div>
+        </div>
+        
+        <div id="downloadSection" class="download-section" style="display: none;">
+            <h3>📥 Aufgenommene Videos</h3>
+            <div id="videoList" class="video-list"></div>
+        </div>
+        
+        <div class="info-panel">
+            <h3>💡 Anleitung</h3>
+            <p>1. Kamera-Berechtigung gewähren</p>
+            <p>2. "Aufnahme starten" drücken</p>
+            <p>3. Video aufnehmen</p>
+            <p>4. "Aufnahme stoppen" drücken</p>
+            <p>5. Video herunterladen</p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
