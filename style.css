@@ -243,22 +243,153 @@ h1 {
     background: #7B1FA2;
 }
 
-/* Info Panel */
-.info-panel {
-    background: rgba(0,0,0,0.3);
-    padding: 20px;
-    border-radius: 15px;
+/* Speech Preview */
+.speech-preview {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    display: none;
+    max-width: 90%;
     text-align: center;
+    border: 2px solid #4CAF50;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-.info-panel h3 {
+.speech-preview.listening {
+    background: rgba(33, 150, 243, 0.9);
+    border-color: #2196F3;
+    animation: pulse-speech 2s infinite;
+}
+
+.speech-preview.recognized {
+    background: rgba(76, 175, 80, 0.9);
+    border-color: #4CAF50;
+}
+
+.speech-preview.error {
+    background: rgba(244, 67, 54, 0.9);
+    border-color: #f44336;
+}
+
+@keyframes pulse-speech {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* Listening Status */
+.listening-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.pulse-dot {
+    width: 12px;
+    height: 12px;
+    background: #4CAF50;
+    border-radius: 50%;
+    animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+/* Button Styles Update */
+.btn-listen {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-listen:hover {
+    background: #1976D2;
+    transform: translateY(-2px);
+}
+
+.btn-listen.active {
+    background: #FF5722;
+    animation: pulse-button 2s infinite;
+}
+
+@keyframes pulse-button {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 87, 34, 0); }
+}
+
+/* Commands Section */
+.commands-section {
+    background: rgba(0,0,0,0.3);
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.commands-section h3 {
+    color: #4CAF50;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+}
+
+.commands-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.command-group {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #4CAF50;
+}
+
+.command-group h4 {
     color: #4CAF50;
     margin-bottom: 15px;
+    font-size: 1.1rem;
 }
 
-.info-panel p {
-    margin: 8px 0;
-    font-size: 1rem;
+.command-group ul {
+    list-style: none;
+    padding: 0;
+}
+
+.command-group li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.95rem;
+}
+
+.command-group li:last-child {
+    border-bottom: none;
+}
+
+.command-group li:before {
+    content: "🎤 ";
+    margin-right: 8px;
+}
+
+.command-note {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 193, 7, 0.2);
+    border: 2px solid #FFC107;
+    border-radius: 10px;
+    font-size: 0.95rem;
     line-height: 1.4;
 }
 
