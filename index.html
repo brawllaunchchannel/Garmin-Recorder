@@ -14,14 +14,19 @@
             <video id="videoPreview" autoplay muted playsinline></video>
             <div id="noVideoText" class="no-video">📹 Kamera wird geladen...</div>
             <div id="recordingIndicator" class="recording-indicator">🔴 AUFNAHME LÄUFT</div>
+            <div id="speechPreview" class="speech-preview">🎤 Sage etwas...</div>
         </div>
         
         <div id="statusPanel" class="status-panel">
             <div id="statusText" class="status-text">Initialisierung...</div>
+            <div id="listeningStatus" class="listening-status" style="display: none;">
+                <span class="pulse-dot"></span> Höre zu...
+            </div>
         </div>
         
         <div class="controls">
-            <button id="startRecordBtn" class="btn btn-start">📹 Aufnahme starten</button>
+            <button id="startListeningBtn" class="btn btn-listen">🎤 Spracherkennung starten</button>
+            <button id="startRecordBtn" class="btn btn-start">📹 Manuell starten</button>
             <button id="stopRecordBtn" class="btn btn-stop" style="display: none;">⏹️ Aufnahme stoppen</button>
             <button id="testAudioBtn" class="btn btn-test">🔊 Audio testen</button>
         </div>
@@ -36,13 +41,33 @@
             <div id="videoList" class="video-list"></div>
         </div>
         
-        <div class="info-panel">
-            <h3>💡 Anleitung</h3>
-            <p>1. Kamera-Berechtigung gewähren</p>
-            <p>2. "Aufnahme starten" drücken</p>
-            <p>3. Video aufnehmen</p>
-            <p>4. "Aufnahme stoppen" drücken</p>
-            <p>5. Video herunterladen</p>
+        <div class="commands-section">
+            <h3>🗣️ Sprachbefehle</h3>
+            <div class="commands-grid">
+                <div class="command-group">
+                    <h4>📹 Video starten:</h4>
+                    <ul>
+                        <li>"OK Garmin Video starten"</li>
+                        <li>"OK Garmin Aufnahme starten"</li>
+                        <li>"OK Garmin Recording starten"</li>
+                        <li>"OK Garmin beginnen"</li>
+                    </ul>
+                </div>
+                <div class="command-group">
+                    <h4>💾 Video speichern:</h4>
+                    <ul>
+                        <li>"OK Garmin Video speichern"</li>
+                        <li>"OK Garmin Aufnahme speichern"</li>
+                        <li>"OK Garmin Video sichern"</li>
+                        <li>"OK Garmin beenden"</li>
+                        <li>"OK Garmin stoppen"</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="command-note">
+                💡 <strong>Wichtig:</strong> Immer mit "OK Garmin" oder "Okay Garmin" beginnen!<br>
+                🔊 Sprechen Sie klar und deutlich.
+            </p>
         </div>
     </div>
     
